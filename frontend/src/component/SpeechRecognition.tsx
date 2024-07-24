@@ -51,15 +51,11 @@ export const SpeechRecognition = (props: Props) => {
             .then(stream => {
                 // Docs: https://developer.mozilla.org/ja/docs/Web/API/MediaRecorder/MediaRecorder
                 const ctx = new AudioContext();
-                analyserRef.current = ctx.createAnalyser();
                 const audioSource = ctx.createMediaStreamSource(stream);
                 const analyserNode = ctx.createAnalyser();
                 analyserNode.fftSize = 2048;
                 analyserNode.smoothingTimeConstant = 0.8;
                 audioSource.connect(analyserNode);
-                // analyserNode.connect(ctx.destination); // 出力ノードには繋がない
-
-                // const dataArray = new Uint8Array(analyserNode.frequencyBinCount);
                 const newRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
                 setMediaRecorder(newRecorder);
 
@@ -111,14 +107,12 @@ export const SpeechRecognition = (props: Props) => {
                     animationFrameRef.current = requestAnimationFrame(setupAudioTrack)
                 }
                 newRecorder.onstart = () => {
-                    console.log('newRecorder started:', recognition);
                     setRecording(true);
                     setupAudioTrack();
                     recognition.start();
                 }
 
                 newRecorder.onstop = () => {
-                    console.log('newRecorder stopped:', recognition);
                     setRecording(false);
                     animationFrameRef.current && cancelAnimationFrame(animationFrameRef.current);
                     recognition.stop();
@@ -132,14 +126,12 @@ export const SpeechRecognition = (props: Props) => {
                 };
 
                 recognition.onresult = () => {
-                    console.log('on result')
                     recognition.stop()
                 }
 
                 recognition.onresult = (event) => {
                     for (let i = event.resultIndex; i < event.results.length; i++) {
                         if (!event.results[i].isFinal) continue
-                        // 認識結果を配列で取得                        
                         const resultTexts = event.results? Array.from(event.results)
                                                                 .filter(result => result.isFinal)
                                                                 .map(result => result[0] ? result[0].transcript : '')
@@ -165,7 +157,6 @@ export const SpeechRecognition = (props: Props) => {
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
             }
-            // クリーンアップ
             window.removeEventListener('resize', resizeCanvas);
             animationFrameRef.current && cancelAnimationFrame(animationFrameRef.current);
             canvasRef.current && canvasRef.current.getContext('2d')?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -174,7 +165,6 @@ export const SpeechRecognition = (props: Props) => {
     }, []);
 
     const handleRecording = () => {
-        console.log("clicked:", mediaRecorderRef.current, mediaRecorder);
 
         if (mediaRecorderRef.current && mediaRecorder) {
             if (!recording && mediaRecorder.state === 'inactive') {
